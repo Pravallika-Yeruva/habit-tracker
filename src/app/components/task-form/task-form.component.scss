@@ -1,0 +1,238 @@
+:host {
+  display: block;
+}
+
+.add-task-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto auto;
+  gap: 0.55rem;
+  margin-bottom: 1rem;
+  padding: 0.7rem;
+  border: 1px solid #e6ebe4;
+  border-radius: 0.75rem;
+  background: #fbfcfa;
+
+  input[type='text'] {
+    flex: 1 1 12rem;
+    min-width: 0;
+    padding: 0.65rem 0.7rem;
+    border: 1px solid #e5e9e2;
+    border-radius: 0.5rem;
+    color: #34463b;
+    font: inherit;
+    font-size: 0.85rem;
+
+    &:focus {
+      border-color: #78927f;
+      outline: 2px solid rgba(82, 120, 99, 0.15);
+    }
+  }
+}
+
+.task-title-input {
+  grid-column: 1 / -1;
+}
+
+.form-field {
+  display: grid;
+  gap: 0.35rem;
+  color: #647269;
+  font-size: 0.73rem;
+  font-weight: 700;
+
+  input,
+  select {
+    min-width: 0;
+    padding: 0.6rem 0.65rem;
+    border: 1px solid #e5e9e2;
+    border-radius: 0.5rem;
+    background: #fff;
+    color: #34463b;
+    font: inherit;
+    font-size: 0.82rem;
+
+    &:focus {
+      border-color: #78927f;
+      outline: 2px solid rgba(82, 120, 99, 0.15);
+    }
+  }
+}
+
+.task-time-wheels {
+  display: flex;
+  align-items: end;
+  gap: 0.35rem;
+  width: 100%;
+  max-width: 22rem;
+  padding: 0.65rem;
+  border: 1px solid #e6ece4;
+  border-radius: 0.85rem;
+  background: #f7f9f6;
+}
+
+.task-time-wheel-column {
+  display: grid;
+  flex: 0 0 6rem;
+  min-width: 0;
+  gap: 0.35rem;
+  text-align: center;
+}
+
+.task-time-unit {
+  color: #879188;
+  font-size: 0.57rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.task-time-wheel {
+  position: relative;
+  display: flex;
+  height: 2.65rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border: 1px solid #e3e9e1;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #f1f5ef, #fff 50%, #f1f5ef);
+  overscroll-behavior: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #89a18c;
+    outline-offset: 2px;
+  }
+
+  &::after {
+    position: absolute;
+    z-index: 0;
+    top: 0.15rem;
+    bottom: 0.15rem;
+    left: 50%;
+    width: 2.5rem;
+    border-radius: 999px;
+    background: #dcebdd;
+    box-shadow: inset 0 1px 2px rgba(41, 58, 50, 0.08);
+    content: '';
+    pointer-events: none;
+    transform: translateX(-50%);
+  }
+}
+
+.task-time-wheel-spacer {
+  flex: 0 0 1.25rem;
+  pointer-events: none;
+}
+
+.task-time-wheel-option {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  flex: 0 0 2.5rem;
+  height: 100%;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #98a198;
+  font: inherit;
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+  cursor: pointer;
+  transition:
+    color 120ms ease,
+    transform 120ms ease;
+
+  &.selected {
+    color: #355a40;
+    font-size: 1rem;
+    font-weight: 800;
+  }
+
+  &:hover {
+    color: #527863;
+  }
+}
+
+.task-time-period-column .task-time-wheel-option {
+  font-size: 0.76rem;
+
+  &.selected {
+    font-size: 0.75rem;
+  }
+}
+
+.task-time-colon {
+  align-self: center;
+  padding-top: 1rem;
+  color: #78927f;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.task-form-options {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.15rem 0;
+}
+
+.color-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.option-label {
+  color: #78827b;
+  font-size: 0.73rem;
+  font-weight: 700;
+}
+
+@media (max-width: 600px) {
+  .add-task-form {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+
+  .task-title-input,
+  .task-time-field,
+  .task-form-options {
+    grid-column: 1 / -1;
+  }
+
+  .task-time-wheels {
+    max-width: min(100%, 22rem);
+    gap: 0.2rem;
+    padding: 0.5rem;
+  }
+
+  .task-time-wheel-column {
+    flex: 1 1 0;
+    min-width: 3.8rem;
+  }
+
+  .task-time-wheel::after {
+    width: 2.25rem;
+  }
+
+  .add-task-form .save-button {
+    grid-column: 2;
+  }
+
+  .add-task-form .cancel-button {
+    grid-column: 1 / -1;
+  }
+}

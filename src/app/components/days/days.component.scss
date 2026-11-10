@@ -1,0 +1,165 @@
+:host {
+  display: block;
+}
+
+.week-strip {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.55rem;
+  padding: 1.35rem 1.5rem;
+  border-bottom: 1px solid #eef0eb;
+}
+
+.day-button {
+  display: grid;
+  min-height: 5.4rem;
+  justify-items: center;
+  align-content: center;
+  gap: 0.35rem;
+  border: 1px solid transparent;
+  border-radius: 0.8rem;
+  background: #f8f9f6;
+  color: #58675d;
+  cursor: pointer;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    transform 140ms ease;
+
+  &:hover {
+    border-color: #cad7cc;
+    transform: translateY(-1px);
+  }
+
+  &.selected {
+    border-color: #527863;
+    background: #527863;
+    color: #fff;
+  }
+
+  &.today:not(.selected) .day-number {
+    color: #a3654c;
+  }
+}
+
+.day-name {
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.day-number {
+  color: #34463b;
+  font-size: 1.15rem;
+  font-weight: 750;
+}
+
+.day-button.selected .day-number {
+  color: #fff;
+}
+
+.day-task-count {
+  min-height: 0.3rem;
+  color: inherit;
+  font-size: 0.6rem;
+  font-weight: 700;
+}
+
+.month-calendar {
+  padding: 1rem 1.5rem 1.35rem;
+  border-bottom: 1px solid #eef0eb;
+}
+
+.weekday-heading,
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.weekday-heading {
+  padding-bottom: 0.4rem;
+  color: #929a93;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.month-day {
+  position: relative;
+  display: grid;
+  min-height: 3.25rem;
+  place-items: center;
+  border: 0;
+  border-radius: 0.65rem;
+  background: transparent;
+  color: #45554a;
+  font: inherit;
+  cursor: pointer;
+
+  &:hover {
+    background: #f0f4ef;
+  }
+
+  &.outside-month {
+    color: #c0c6c0;
+  }
+
+  &.today:not(.selected) .month-day-number {
+    border: 1px solid #a3654c;
+  }
+
+  &.selected {
+    background: #527863;
+    color: #fff;
+  }
+}
+
+.month-day-number {
+  display: grid;
+  width: 1.85rem;
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+
+.task-indicator {
+  position: absolute;
+  bottom: 0.3rem;
+  width: 0.25rem;
+  height: 0.25rem;
+  border-radius: 50%;
+  background: #d97855;
+}
+
+.month-day.selected .task-indicator {
+  background: #fff;
+}
+
+@media (max-width: 600px) {
+  .week-strip {
+    gap: 0.3rem;
+    padding: 1rem 0.65rem;
+  }
+
+  .day-button {
+    min-height: 4.7rem;
+    border-radius: 0.65rem;
+  }
+
+  .day-name {
+    font-size: 0.62rem;
+  }
+
+  .day-number {
+    font-size: 1rem;
+  }
+
+  .month-calendar {
+    padding: 0.75rem 0.6rem 1rem;
+  }
+
+  .month-day {
+    min-height: 2.7rem;
+  }
+}

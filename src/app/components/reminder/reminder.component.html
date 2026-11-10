@@ -1,0 +1,143 @@
+<button
+  class="reminder-button"
+  type="button"
+  [class.active]="reminderTime !== ''"
+  [attr.aria-haspopup]="'dialog'"
+  [attr.aria-expanded]="isReminderTimeModalOpen"
+  (click)="openReminderTimeModal()"
+>
+  <span aria-hidden="true">🔔</span>
+  {{ reminderTime ? 'Reminder set' : 'Add reminder' }}
+</button>
+
+@if (isReminderTimeModalOpen) {
+  <div class="modal-backdrop" (click)="closeReminderTimeModal()">
+    <section
+      class="time-picker-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="time-picker-title"
+      (keydown.escape)="closeReminderTimeModal()"
+      (click)="$event.stopPropagation()"
+    >
+      <button
+        class="modal-close"
+        type="button"
+        aria-label="Close time picker"
+        (click)="closeReminderTimeModal()"
+      >
+        ×
+      </button>
+      <p class="eyebrow">Set a reminder</p>
+      <h2 id="time-picker-title">What time works for you?</h2>
+      <p class="modal-description">Select a time or type it in manually.</p>
+      <output class="time-preview" aria-live="polite">{{ reminderTimePreview }}</output>
+      <fieldset class="modal-presets">
+        <legend>Quick choices</legend>
+        @for (preset of reminderPresets; track preset.time) {
+          <button
+            type="button"
+            class="modal-preset"
+            [class.selected]="reminderTimeDraft === preset.time"
+            [attr.aria-pressed]="reminderTimeDraft === preset.time"
+            (click)="selectReminderTime(preset.time)"
+          >
+            <span>{{ preset.label }}</span>
+            <strong>{{ preset.time }}</strong>
+          </button>
+        }
+      </fieldset>
+      <div class="modal-time-field">
+        <span>Custom time</span>
+        <div class="time-format-toggle" role="group" aria-label="Time format">
+          <button
+            type="button"
+            [class.selected]="reminderTimeFormatDraft === '12-hour'"
+            [attr.aria-pressed]="reminderTimeFormatDraft === '12-hour'"
+            (click)="setReminderTimeFormat('12-hour')"
+          >
+            12-hour
+          </button>
+          <button
+            type="button"
+            [class.selected]="reminderTimeFormatDraft === '24-hour'"
+            [attr.aria-pressed]="reminderTimeFormatDraft === '24-hour'"
+            (click)="setReminderTimeFormat('24-hour')"
+          >
+            24-hour
+          </button>
+        </div>
+        <div class="manual-time-entry">
+          <input
+            name="manualReminderTime"
+            type="text"
+            inputmode="numeric"
+            [placeholder]="reminderTimeFormatDraft === '24-hour' ? '16:30' : '04:30'"
+            maxlength="5"
+            [attr.aria-label]="
+              reminderTimeFormatDraft === '24-hour'
+                ? 'Enter time in 24-hour format'
+                : 'Enter time in 12-hour format'
+            "
+            [(ngModel)]="manualReminderTimeDraft"
+            (ngModelChange)="updateReminderTimeFromManualEntry($event)"
+          />
+          @if (reminderTimeFormatDraft === '12-hour') {
+            <select
+              name="reminderPeriod"
+              aria-label="AM or PM"
+              [(ngModel)]="reminderPeriodDraft"
+              (ngModelChange)="updateReminderPeriod($event)"
+            >
+              <option value="AM">AM</option>
+              <option value="PM">PM</option>
+            </select>
+          }
+          <span class="manual-time-help">{{ reminderTimeFormatDraft }}</span>
+        </div>
+      </div>
+      <label class="modal-notification-choice">
+        <span>
+          <strong>Send a notification?</strong>
+          <small>Save this preference with the reminder.</small>
+        </span>
+        <input
+          name="reminderNotificationDraft"
+          type="checkbox"
+          [(ngModel)]="reminderNotificationDraft"
+          (ngModelChange)="updateNotificationPreference($event)"
+        />
+      </label>
+      @if (notificationPermissionMessage) {
+        <p class="notification-note" role="alert">{{ notificationPermissionMessage }}</p>
+      }
+      @if (reminderNotificationDraft) {
+        <p class="notification-note">
+          Reminders appear as browser notifications while BrightSteps is open.
+        </p>
+      }
+      <div class="modal-actions">
+        @if (reminderTime) {
+          <button
+            class="remove-reminder-button"
+            type="button"
+            (click)="removeNewTaskReminder()"
+          >
+            Remove
+          </button>
+        }
+        <button class="cancel-button" type="button" (click)="closeReminderTimeModal()">
+          Cancel
+        </button>
+        <button
+          class="save-button"
+          type="button"
+          [disabled]="!isValidTime(reminderTimeDraft) || !isValidManualReminderTime"
+          (click)="applyReminderTime()"
+        >
+          Save reminder
+        </button>
+      </div>
+    </section>
+  </div>
+}

@@ -1,0 +1,134 @@
+<form class="add-task-form" (ngSubmit)="submit()">
+  <label class="visually-hidden" for="new-task">
+    {{ task ? 'Edit task name' : 'Task name' }}
+  </label>
+  <input
+    id="new-task"
+    class="task-title-input"
+    name="newTaskTitle"
+    type="text"
+    placeholder="What would you like to do?"
+    [(ngModel)]="taskDraft.title"
+    maxlength="100"
+    required
+    autofocus
+  />
+  <label class="form-field task-time-field">
+    <span>Task time <span class="optional-label">optional</span></span>
+    <span class="task-time-wheels">
+      <span class="task-time-wheel-column">
+        <span class="task-time-unit">Hour</span>
+        <span
+          class="task-time-wheel"
+          role="listbox"
+          aria-label="Task hour"
+          tabindex="0"
+          [scrollLeft]="taskTimeWheelOffset('hour')"
+          (scroll)="onTaskTimeWheelScroll($event, 'hour')"
+          (keydown)="onTaskTimeWheelKeydown($event, 'hour')"
+        >
+          <span class="task-time-wheel-spacer" aria-hidden="true"></span>
+          @for (hour of taskTimeWheelOptions('hour'); track $index) {
+            <button
+              type="button"
+              role="option"
+              class="task-time-wheel-option"
+              [class.selected]="newTaskHourDraft === hour"
+              [attr.aria-selected]="newTaskHourDraft === hour"
+              tabindex="-1"
+              (click)="selectTaskTimeOption($event, 'hour', hour)"
+            >{{ hour || '--' }}</button>
+          }
+          <span class="task-time-wheel-spacer" aria-hidden="true"></span>
+        </span>
+      </span>
+      <span class="task-time-colon" aria-hidden="true">:</span>
+      <span class="task-time-wheel-column">
+        <span class="task-time-unit">Minute</span>
+        <span
+          class="task-time-wheel"
+          role="listbox"
+          aria-label="Task minute"
+          tabindex="0"
+          [scrollLeft]="taskTimeWheelOffset('minute')"
+          (scroll)="onTaskTimeWheelScroll($event, 'minute')"
+          (keydown)="onTaskTimeWheelKeydown($event, 'minute')"
+        >
+          <span class="task-time-wheel-spacer" aria-hidden="true"></span>
+          @for (minute of taskTimeWheelOptions('minute'); track $index) {
+            <button
+              type="button"
+              role="option"
+              class="task-time-wheel-option"
+              [class.selected]="newTaskMinuteDraft === minute"
+              [attr.aria-selected]="newTaskMinuteDraft === minute"
+              tabindex="-1"
+              (click)="selectTaskTimeOption($event, 'minute', minute)"
+            >{{ minute || '--' }}</button>
+          }
+          <span class="task-time-wheel-spacer" aria-hidden="true"></span>
+        </span>
+      </span>
+      <span class="task-time-wheel-column task-time-period-column">
+        <span class="task-time-unit">AM / PM</span>
+        <span
+          class="task-time-wheel"
+          role="listbox"
+          aria-label="AM or PM"
+          tabindex="0"
+          [scrollLeft]="taskTimeWheelOffset('period')"
+          (scroll)="onTaskTimeWheelScroll($event, 'period')"
+          (keydown)="onTaskTimeWheelKeydown($event, 'period')"
+        >
+          <span class="task-time-wheel-spacer" aria-hidden="true"></span>
+          @for (period of taskTimeWheelOptions('period'); track $index) {
+            <button
+              type="button"
+              role="option"
+              class="task-time-wheel-option"
+              [class.selected]="newTaskPeriodDraft === period"
+              [attr.aria-selected]="newTaskPeriodDraft === period"
+              tabindex="-1"
+              (click)="selectTaskTimeOption($event, 'period', period)"
+            >{{ period || '--' }}</button>
+          }
+          <span class="task-time-wheel-spacer" aria-hidden="true"></span>
+        </span>
+      </span>
+    </span>
+  </label>
+  <label class="form-field">
+    <span>Repeat</span>
+    <select name="newTaskRepeat" [(ngModel)]="taskDraft.repeat">
+      <option value="none">Does not repeat</option>
+      <option value="daily">Every day</option>
+      <option value="weekly">Every week</option>
+      <option value="monthly">Every month</option>
+    </select>
+  </label>
+  <div class="task-form-options">
+    <div class="color-picker" role="group" aria-label="Task color">
+      <span class="option-label">Color</span>
+      @for (color of taskColors; track color) {
+        <button
+          class="color-swatch"
+          type="button"
+          [style.--swatch-color]="colorValue(color)"
+          [class.selected]="taskDraft.color === color"
+          [attr.aria-label]="'Use ' + color + ' color'"
+          [attr.aria-pressed]="taskDraft.color === color"
+          (click)="taskDraft.color = color"
+        ></button>
+      }
+    </div>
+    <app-reminder
+      [reminderTime]="taskDraft.reminderTime"
+      [sendNotification]="taskDraft.sendNotification"
+      (reminderChange)="setReminder($event)"
+    />
+  </div>
+  <button class="save-button" type="submit" [disabled]="!taskDraft.title.trim()">
+    {{ task ? 'Save changes' : 'Add' }}
+  </button>
+  <button class="cancel-button" type="button" (click)="cancel.emit()">Cancel</button>
+</form>

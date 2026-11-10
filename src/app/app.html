@@ -63,67 +63,12 @@
         </div>
       </div>
 
-      @if (view === 'month') {
-        <div class="month-calendar">
-          <div class="weekday-heading" aria-hidden="true">
-            @for (dayName of ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']; track dayName) {
-              <span>{{ dayName }}</span>
-            }
-          </div>
-          <div class="month-grid">
-            @for (day of monthDays; track day.key) {
-              <button
-                type="button"
-                class="month-day"
-                [class.outside-month]="!day.isCurrentMonth"
-                [class.selected]="day.isSelected"
-                [class.today]="day.isToday"
-                [attr.aria-label]="
-                  day.date.toLocaleDateString(undefined, {
-                    weekday: 'long',
-                    month: 'long',
-                    day: 'numeric',
-                    year: 'numeric',
-                  }) + (day.taskCount ? ', ' + day.taskCount + ' tasks' : '')
-                "
-                [attr.aria-pressed]="day.isSelected"
-                (click)="selectDate(day.date)"
-              >
-                <span class="month-day-number">{{ day.dayNumber }}</span>
-                @if (day.taskCount > 0) {
-                  <span class="task-indicator" [attr.aria-label]="day.taskCount + ' tasks'"></span>
-                }
-              </button>
-            }
-          </div>
-        </div>
-      } @else if (view === 'week') {
-        <div class="week-strip" aria-label="Choose a day">
-          @for (day of weekDays; track day.key) {
-            <button
-              type="button"
-              class="day-button"
-              [class.selected]="day.isSelected"
-              [class.today]="day.isToday"
-              [attr.aria-label]="
-                day.date.toLocaleDateString(undefined, {
-                  weekday: 'long',
-                  month: 'long',
-                  day: 'numeric',
-                }) + (day.taskCount ? ', ' + day.taskCount + ' tasks' : '')
-              "
-              [attr.aria-pressed]="day.isSelected"
-              (click)="selectDate(day.date)"
-            >
-              <span class="day-name">{{ day.dayName }}</span>
-              <span class="day-number">{{ day.dayNumber }}</span>
-              @if (day.taskCount > 0) {
-                <span class="day-task-count">{{ day.taskCount }}</span>
-              }
-            </button>
-          }
-        </div>
-      }
+      <app-days
+        [view]="view"
+        [weekDays]="weekDays"
+        [monthDays]="monthDays"
+        (dateSelected)="selectDate($event)"
+      />
 
       <div class="task-section">
         <div class="task-heading">
@@ -149,282 +94,24 @@
             [attr.aria-expanded]="isAddingTask"
             (click)="toggleTaskForm()"
           >
-            <span aria-hidden="true">{{ editingTaskId ? '×' : '+' }}</span>
-            <span>{{ editingTaskId ? 'Cancel edit' : 'Add task' }}</span>
+            <span aria-hidden="true">{{ editingTask ? '×' : '+' }}</span>
+            <span>{{ editingTask ? 'Cancel edit' : 'Add task' }}</span>
           </button>
         </div>
 
         @if (storageError) {
           <p class="storage-error" role="alert">{{ storageError }}</p>
         }
-
-        @if (isAddingTask) {
-          <form class="add-task-form" (ngSubmit)="addTask()">
-            <label class="visually-hidden" for="new-task">
-              {{ editingTaskId ? 'Edit task name' : 'Task name' }}
-            </label>
-            <input
-              id="new-task"
-              class="task-title-input"
-              name="newTaskTitle"
-              type="text"
-              placeholder="What would you like to do?"
-              [(ngModel)]="newTaskTitle"
-              maxlength="100"
-              required
-              autofocus
-            />
-            <label class="form-field task-time-field">
-              <span>Task time <span class="optional-label">optional</span></span>
-              <span class="task-time-wheels">
-                <span class="task-time-wheel-column">
-                  <span class="task-time-unit">Hour</span>
-                  <span
-                    class="task-time-wheel"
-                    role="listbox"
-                    aria-label="Task hour"
-                    tabindex="0"
-                    [scrollLeft]="taskTimeWheelOffset('hour')"
-                    (scroll)="onTaskTimeWheelScroll($event, 'hour')"
-                    (keydown)="onTaskTimeWheelKeydown($event, 'hour')"
-                  >
-                    <span class="task-time-wheel-spacer" aria-hidden="true"></span>
-                    @for (hour of taskTimeWheelOptions('hour'); track $index) {
-                      <button
-                        type="button"
-                        role="option"
-                        class="task-time-wheel-option"
-                        [class.selected]="newTaskHourDraft === hour"
-                        [attr.aria-selected]="newTaskHourDraft === hour"
-                        tabindex="-1"
-                        (click)="selectTaskTimeOption($event, 'hour', hour)"
-                      >{{ hour || '--' }}</button>
-                    }
-                    <span class="task-time-wheel-spacer" aria-hidden="true"></span>
-                  </span>
-                </span>
-                <span class="task-time-colon" aria-hidden="true">:</span>
-                <span class="task-time-wheel-column">
-                  <span class="task-time-unit">Minute</span>
-                  <span
-                    class="task-time-wheel"
-                    role="listbox"
-                    aria-label="Task minute"
-                    tabindex="0"
-                    [scrollLeft]="taskTimeWheelOffset('minute')"
-                    (scroll)="onTaskTimeWheelScroll($event, 'minute')"
-                    (keydown)="onTaskTimeWheelKeydown($event, 'minute')"
-                  >
-                    <span class="task-time-wheel-spacer" aria-hidden="true"></span>
-                    @for (minute of taskTimeWheelOptions('minute'); track $index) {
-                      <button
-                        type="button"
-                        role="option"
-                        class="task-time-wheel-option"
-                        [class.selected]="newTaskMinuteDraft === minute"
-                        [attr.aria-selected]="newTaskMinuteDraft === minute"
-                        tabindex="-1"
-                        (click)="selectTaskTimeOption($event, 'minute', minute)"
-                      >{{ minute || '--' }}</button>
-                    }
-                    <span class="task-time-wheel-spacer" aria-hidden="true"></span>
-                  </span>
-                </span>
-                <span class="task-time-wheel-column task-time-period-column">
-                  <span class="task-time-unit">AM / PM</span>
-                  <span
-                    class="task-time-wheel"
-                    role="listbox"
-                    aria-label="AM or PM"
-                    tabindex="0"
-                    [scrollLeft]="taskTimeWheelOffset('period')"
-                    (scroll)="onTaskTimeWheelScroll($event, 'period')"
-                    (keydown)="onTaskTimeWheelKeydown($event, 'period')"
-                  >
-                    <span class="task-time-wheel-spacer" aria-hidden="true"></span>
-                    @for (period of taskTimeWheelOptions('period'); track $index) {
-                      <button
-                        type="button"
-                        role="option"
-                        class="task-time-wheel-option"
-                        [class.selected]="newTaskPeriodDraft === period"
-                        [attr.aria-selected]="newTaskPeriodDraft === period"
-                        tabindex="-1"
-                        (click)="selectTaskTimeOption($event, 'period', period)"
-                      >{{ period || '--' }}</button>
-                    }
-                    <span class="task-time-wheel-spacer" aria-hidden="true"></span>
-                  </span>
-                </span>
-              </span>
-            </label>
-            <label class="form-field">
-              <span>Repeat</span>
-              <select name="newTaskRepeat" [(ngModel)]="newTaskRepeat">
-                <option value="none">Does not repeat</option>
-                <option value="daily">Every day</option>
-                <option value="weekly">Every week</option>
-                <option value="monthly">Every month</option>
-              </select>
-            </label>
-            <div class="task-form-options">
-              <div class="color-picker" role="group" aria-label="Task color">
-                <span class="option-label">Color</span>
-                @for (color of taskColors; track color) {
-                  <button
-                    class="color-swatch"
-                    type="button"
-                    [style.--swatch-color]="colorValue(color)"
-                    [class.selected]="newTaskColor === color"
-                    [attr.aria-label]="'Use ' + color + ' color'"
-                    [attr.aria-pressed]="newTaskColor === color"
-                    (click)="setNewTaskColor(color)"
-                  ></button>
-                }
-              </div>
-              <button
-                class="reminder-button"
-                type="button"
-                [class.active]="hasNewTaskReminder"
-                [attr.aria-haspopup]="'dialog'"
-                [attr.aria-expanded]="isReminderTimeModalOpen"
-                (click)="openReminderTimeModal()"
-              >
-                <span aria-hidden="true">🔔</span>
-                {{ hasNewTaskReminder ? 'Reminder set' : 'Add reminder' }}
-              </button>
-            </div>
-            <button class="save-button" type="submit" [disabled]="!newTaskTitle.trim()">
-              {{ editingTaskId ? 'Save changes' : 'Add' }}
-            </button>
-            <button class="cancel-button" type="button" (click)="cancelTaskForm()">Cancel</button>
-          </form>
+        @if (notificationError()) {
+          <p class="storage-error" role="alert">{{ notificationError() }}</p>
         }
 
-        @if (isReminderTimeModalOpen) {
-          <div class="modal-backdrop" (click)="closeReminderTimeModal()">
-            <section
-              class="time-picker-modal"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="time-picker-title"
-              (keydown.escape)="closeReminderTimeModal()"
-              (click)="$event.stopPropagation()"
-            >
-              <button
-                class="modal-close"
-                type="button"
-                aria-label="Close time picker"
-                (click)="closeReminderTimeModal()"
-              >
-                ×
-              </button>
-              <p class="eyebrow">Set a reminder</p>
-              <h2 id="time-picker-title">What time works for you?</h2>
-              <p class="modal-description">Select a time or type it in manually.</p>
-              <output class="time-preview" aria-live="polite">{{ reminderTimePreview }}</output>
-              <fieldset class="modal-presets">
-                <legend>Quick choices</legend>
-                @for (preset of reminderPresets; track preset.time) {
-                  <button
-                    type="button"
-                    class="modal-preset"
-                    [class.selected]="reminderTimeDraft === preset.time"
-                    [attr.aria-pressed]="reminderTimeDraft === preset.time"
-                    (click)="selectReminderTime(preset.time)"
-                  >
-                    <span>{{ preset.label }}</span>
-                    <strong>{{ preset.time }}</strong>
-                  </button>
-                }
-              </fieldset>
-              <div class="modal-time-field">
-                <span>Custom time</span>
-                <div class="time-format-toggle" role="group" aria-label="Time format">
-                  <button
-                    type="button"
-                    [class.selected]="reminderTimeFormatDraft === '12-hour'"
-                    [attr.aria-pressed]="reminderTimeFormatDraft === '12-hour'"
-                    (click)="setReminderTimeFormat('12-hour')"
-                  >
-                    12-hour
-                  </button>
-                  <button
-                    type="button"
-                    [class.selected]="reminderTimeFormatDraft === '24-hour'"
-                    [attr.aria-pressed]="reminderTimeFormatDraft === '24-hour'"
-                    (click)="setReminderTimeFormat('24-hour')"
-                  >
-                    24-hour
-                  </button>
-                </div>
-                <div class="manual-time-entry">
-                  <input
-                    name="manualReminderTime"
-                    type="text"
-                    inputmode="numeric"
-                    [placeholder]="reminderTimeFormatDraft === '24-hour' ? '16:30' : '04:30'"
-                    maxlength="5"
-                    [attr.aria-label]="
-                      reminderTimeFormatDraft === '24-hour'
-                        ? 'Enter time in 24-hour format'
-                        : 'Enter time in 12-hour format'
-                    "
-                    [(ngModel)]="manualReminderTimeDraft"
-                    (ngModelChange)="updateReminderTimeFromManualEntry($event)"
-                  />
-                  @if (reminderTimeFormatDraft === '12-hour') {
-                    <select
-                      name="reminderPeriod"
-                      aria-label="AM or PM"
-                      [(ngModel)]="reminderPeriodDraft"
-                      (ngModelChange)="updateReminderPeriod($event)"
-                    >
-                      <option value="AM">AM</option>
-                      <option value="PM">PM</option>
-                    </select>
-                  }
-                  <span class="manual-time-help">{{ reminderTimeFormatDraft }}</span>
-                </div>
-              </div>
-              <label class="modal-notification-choice">
-                <span>
-                  <strong>Send a notification?</strong>
-                  <small>Save this preference with the reminder.</small>
-                </span>
-                <input
-                  name="reminderNotificationDraft"
-                  type="checkbox"
-                  [(ngModel)]="reminderNotificationDraft"
-                />
-              </label>
-              @if (reminderNotificationDraft) {
-                <p class="notification-note">Browser notification delivery is not enabled yet.</p>
-              }
-              <div class="modal-actions">
-                @if (hasNewTaskReminder) {
-                  <button
-                    class="remove-reminder-button"
-                    type="button"
-                    (click)="removeNewTaskReminder()"
-                  >
-                    Remove
-                  </button>
-                }
-                <button class="cancel-button" type="button" (click)="closeReminderTimeModal()">
-                  Cancel
-                </button>
-                <button
-                  class="save-button"
-                  type="button"
-                  [disabled]="!isValidTime(reminderTimeDraft) || !isValidManualReminderTime"
-                  (click)="applyReminderTime()"
-                >
-                  Save reminder
-                </button>
-              </div>
-            </section>
-          </div>
+        @if (isAddingTask) {
+          <app-task-form
+            [task]="editingTask"
+            (save)="addTask($event)"
+            (cancel)="cancelTaskForm()"
+          />
         }
 
         @if (selectedTasks.length > 0) {

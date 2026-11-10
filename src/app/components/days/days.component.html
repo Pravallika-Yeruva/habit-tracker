@@ -1,0 +1,61 @@
+@if (view === 'month') {
+  <div class="month-calendar">
+    <div class="weekday-heading" aria-hidden="true">
+      @for (dayName of ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']; track dayName) {
+        <span>{{ dayName }}</span>
+      }
+    </div>
+    <div class="month-grid">
+      @for (day of monthDays; track day.key) {
+        <button
+          type="button"
+          class="month-day"
+          [class.outside-month]="!day.isCurrentMonth"
+          [class.selected]="day.isSelected"
+          [class.today]="day.isToday"
+          [attr.aria-label]="
+            day.date.toLocaleDateString(undefined, {
+              weekday: 'long',
+              month: 'long',
+              day: 'numeric',
+              year: 'numeric',
+            }) + (day.taskCount ? ', ' + day.taskCount + ' tasks' : '')
+          "
+          [attr.aria-pressed]="day.isSelected"
+          (click)="dateSelected.emit(day.date)"
+        >
+          <span class="month-day-number">{{ day.dayNumber }}</span>
+          @if (day.taskCount > 0) {
+            <span class="task-indicator" [attr.aria-label]="day.taskCount + ' tasks'"></span>
+          }
+        </button>
+      }
+    </div>
+  </div>
+} @else if (view === 'week') {
+  <div class="week-strip" aria-label="Choose a day">
+    @for (day of weekDays; track day.key) {
+      <button
+        type="button"
+        class="day-button"
+        [class.selected]="day.isSelected"
+        [class.today]="day.isToday"
+        [attr.aria-label]="
+          day.date.toLocaleDateString(undefined, {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric',
+          }) + (day.taskCount ? ', ' + day.taskCount + ' tasks' : '')
+        "
+        [attr.aria-pressed]="day.isSelected"
+        (click)="dateSelected.emit(day.date)"
+      >
+        <span class="day-name">{{ day.dayName }}</span>
+        <span class="day-number">{{ day.dayNumber }}</span>
+        @if (day.taskCount > 0) {
+          <span class="day-task-count">{{ day.taskCount }}</span>
+        }
+      </button>
+    }
+  </div>
+}
