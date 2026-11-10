@@ -106,7 +106,7 @@ describe('App', () => {
     });
   });
 
-  it('should build a task time from the separate hour, minute, and AM/PM wheels', () => {
+  it('should accept task time in a 12-hour text field', async () => {
     const fixture = TestBed.createComponent(App);
     fixture.componentInstance.isAddingTask = true;
     fixture.detectChanges();
@@ -114,28 +114,15 @@ describe('App', () => {
     const form = fixture.debugElement.query(By.directive(TaskFormComponent))
       .componentInstance as TaskFormComponent;
     const root = fixture.nativeElement as HTMLElement;
-    const wheels = {
-      hour: root.querySelector<HTMLElement>('[aria-label="Task hour"].task-time-wheel'),
-      minute: root.querySelector<HTMLElement>('[aria-label="Task minute"].task-time-wheel'),
-      period: root.querySelector<HTMLElement>('[aria-label="AM or PM"].task-time-wheel'),
-    };
-    expect(wheels.hour?.querySelectorAll('[role="option"]')).toHaveLength(13);
-
-    if (wheels.hour) {
-      wheels.hour.scrollLeft = 8 * 40;
-      wheels.hour.dispatchEvent(new Event('scroll'));
+    const timeInput = root.querySelector<HTMLInputElement>('input[name="taskTime"]');
+    expect(timeInput?.type).toBe('text');
+    if (timeInput) {
+      timeInput.value = '08:15 PM';
+      timeInput.dispatchEvent(new Event('input', { bubbles: true }));
     }
-    if (wheels.minute) {
-      wheels.minute.scrollLeft = 40;
-      wheels.minute.dispatchEvent(new Event('scroll'));
-    }
-    if (wheels.period) {
-      wheels.period.scrollLeft = 80;
-      wheels.period.dispatchEvent(new Event('scroll'));
-    }
-    fixture.detectChanges();
-
-    expect(form.taskDraft.time).toBe('20:00');
+    await fixture.whenStable();
+    expect(form.taskDraft.time).toBe('20:15');
+    expect(root.querySelector('.task-time-wheels')).toBeNull();
   });
 
   it('should apply and remove a reminder through the reminder component', () => {

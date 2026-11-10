@@ -2,6 +2,24 @@
   <label class="visually-hidden" for="new-task">
     {{ task ? 'Edit task name' : 'Task name' }}
   </label>
+  @if (!task) {
+    <div class="quick-tasks" role="group" aria-label="Quick task choices">
+      <span class="quick-tasks-label">Quick add</span>
+      <div class="quick-task-options">
+        @for (quickTask of quickTasks; track quickTask) {
+          <button
+            class="quick-task-button"
+            type="button"
+            [class.selected]="taskDraft.title === quickTask"
+            [attr.aria-pressed]="taskDraft.title === quickTask"
+            (click)="chooseQuickTask(quickTask)"
+          >
+            {{ quickTask }}
+          </button>
+        }
+      </div>
+    </div>
+  }
   <input
     id="new-task"
     class="task-title-input"
@@ -13,90 +31,27 @@
     required
     autofocus
   />
-  <label class="form-field task-time-field">
-    <span>Task time <span class="optional-label">optional</span></span>
-    <span class="task-time-wheels">
-      <span class="task-time-wheel-column">
-        <span class="task-time-unit">Hour</span>
-        <span
-          class="task-time-wheel"
-          role="listbox"
-          aria-label="Task hour"
-          tabindex="0"
-          [scrollLeft]="taskTimeWheelOffset('hour')"
-          (scroll)="onTaskTimeWheelScroll($event, 'hour')"
-          (keydown)="onTaskTimeWheelKeydown($event, 'hour')"
-        >
-          <span class="task-time-wheel-spacer" aria-hidden="true"></span>
-          @for (hour of taskTimeWheelOptions('hour'); track $index) {
-            <button
-              type="button"
-              role="option"
-              class="task-time-wheel-option"
-              [class.selected]="newTaskHourDraft === hour"
-              [attr.aria-selected]="newTaskHourDraft === hour"
-              tabindex="-1"
-              (click)="selectTaskTimeOption($event, 'hour', hour)"
-            >{{ hour || '--' }}</button>
-          }
-          <span class="task-time-wheel-spacer" aria-hidden="true"></span>
-        </span>
-      </span>
-      <span class="task-time-colon" aria-hidden="true">:</span>
-      <span class="task-time-wheel-column">
-        <span class="task-time-unit">Minute</span>
-        <span
-          class="task-time-wheel"
-          role="listbox"
-          aria-label="Task minute"
-          tabindex="0"
-          [scrollLeft]="taskTimeWheelOffset('minute')"
-          (scroll)="onTaskTimeWheelScroll($event, 'minute')"
-          (keydown)="onTaskTimeWheelKeydown($event, 'minute')"
-        >
-          <span class="task-time-wheel-spacer" aria-hidden="true"></span>
-          @for (minute of taskTimeWheelOptions('minute'); track $index) {
-            <button
-              type="button"
-              role="option"
-              class="task-time-wheel-option"
-              [class.selected]="newTaskMinuteDraft === minute"
-              [attr.aria-selected]="newTaskMinuteDraft === minute"
-              tabindex="-1"
-              (click)="selectTaskTimeOption($event, 'minute', minute)"
-            >{{ minute || '--' }}</button>
-          }
-          <span class="task-time-wheel-spacer" aria-hidden="true"></span>
-        </span>
-      </span>
-      <span class="task-time-wheel-column task-time-period-column">
-        <span class="task-time-unit">AM / PM</span>
-        <span
-          class="task-time-wheel"
-          role="listbox"
-          aria-label="AM or PM"
-          tabindex="0"
-          [scrollLeft]="taskTimeWheelOffset('period')"
-          (scroll)="onTaskTimeWheelScroll($event, 'period')"
-          (keydown)="onTaskTimeWheelKeydown($event, 'period')"
-        >
-          <span class="task-time-wheel-spacer" aria-hidden="true"></span>
-          @for (period of taskTimeWheelOptions('period'); track $index) {
-            <button
-              type="button"
-              role="option"
-              class="task-time-wheel-option"
-              [class.selected]="newTaskPeriodDraft === period"
-              [attr.aria-selected]="newTaskPeriodDraft === period"
-              tabindex="-1"
-              (click)="selectTaskTimeOption($event, 'period', period)"
-            >{{ period || '--' }}</button>
-          }
-          <span class="task-time-wheel-spacer" aria-hidden="true"></span>
-        </span>
-      </span>
-    </span>
-  </label>
+  <div class="form-field task-time-field">
+    <label for="task-time">
+      Task time <span class="optional-label">optional</span>
+    </label>
+    <input
+      id="task-time"
+      name="taskTime"
+      type="text"
+      inputmode="text"
+      placeholder="--:-- --"
+      autocomplete="off"
+      maxlength="8"
+      aria-describedby="task-time-hint"
+      [value]="taskTimeInput"
+      (input)="updateTaskTime($event)"
+    />
+    <span id="task-time-hint" class="task-time-hint">Enter a time like 08:30 AM or 08:30 PM.</span>
+    @if (taskTimeInput && !isTaskTimeValid) {
+      <span class="task-time-error" role="alert">Use the format --:-- AM or --:-- PM.</span>
+    }
+  </div>
   <label class="form-field">
     <span>Repeat</span>
     <select name="newTaskRepeat" [(ngModel)]="taskDraft.repeat">
@@ -127,7 +82,11 @@
       (reminderChange)="setReminder($event)"
     />
   </div>
-  <button class="save-button" type="submit" [disabled]="!taskDraft.title.trim()">
+  <button
+    class="save-button"
+    type="submit"
+    [disabled]="!taskDraft.title.trim() || !isTaskTimeValid"
+  >
     {{ task ? 'Save changes' : 'Add' }}
   </button>
   <button class="cancel-button" type="button" (click)="cancel.emit()">Cancel</button>

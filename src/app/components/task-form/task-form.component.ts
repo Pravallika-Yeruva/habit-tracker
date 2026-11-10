@@ -3,10 +3,6 @@ import { FormsModule } from '@angular/forms';
 import { HabitTask, TASK_COLORS, TaskColor, TaskFormValue, taskColorValue } from '../../models';
 import { ReminderComponent, ReminderSettings } from '../reminder/reminder.component';
 
-type TaskTimeUnit = 'hour' | 'minute' | 'period';
-
-const TASK_TIME_WHEEL_ITEM_WIDTH = 40;
-
 @Component({
   imports: [FormsModule, ReminderComponent],
   selector: 'app-task-form',
@@ -18,11 +14,14 @@ export class TaskFormComponent implements OnChanges {
   @Output() save = new EventEmitter<TaskFormValue>();
   @Output() cancel = new EventEmitter<void>();
 
+  readonly quickTasks = ['Gym', 'Walking', 'Running', 'Chores', 'Reading', 'Meditation'];
   readonly taskColors = TASK_COLORS;
   taskDraft: TaskFormValue = this.emptyTask();
-  newTaskHourDraft = '';
-  newTaskMinuteDraft = '';
-  newTaskPeriodDraft: 'AM' | 'PM' | '' = '';
+  taskTimeInput = '';
+
+  get isTaskTimeValid(): boolean {
+    return this.taskTimeInput === '' || this.parseTaskTime(this.taskTimeInput) !== null;
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['task']) {
@@ -30,68 +29,19 @@ export class TaskFormComponent implements OnChanges {
     }
   }
 
-  get taskTimeHours(): string[] {
-    return Array.from({ length: 12 }, (_, index) => String(index + 1).padStart(2, '0'));
-  }
-
-  get taskTimeMinutes(): string[] {
-    return Array.from({ length: 60 }, (_, minute) => String(minute).padStart(2, '0'));
-  }
-
-  get taskTimePeriods(): string[] {
-    return ['AM', 'PM'];
-  }
-
-  taskTimeWheelOptions(unit: TaskTimeUnit): string[] {
-    const values =
-      unit === 'hour'
-        ? this.taskTimeHours
-        : unit === 'minute'
-          ? this.taskTimeMinutes
-          : this.taskTimePeriods;
-    return ['', ...values];
-  }
-
-  taskTimeWheelOffset(unit: TaskTimeUnit): number {
-    const index = this.taskTimeWheelOptions(unit).indexOf(this.taskTimeValue(unit));
-    return Math.max(index, 0) * TASK_TIME_WHEEL_ITEM_WIDTH;
-  }
-
-  onTaskTimeWheelScroll(event: Event, unit: TaskTimeUnit): void {
-    const wheel = event.currentTarget as HTMLElement;
-    const optionIndex = Math.round(wheel.scrollLeft / TASK_TIME_WHEEL_ITEM_WIDTH);
-    const options = this.taskTimeWheelOptions(unit);
-    this.setTaskTimeOption(unit, options[Math.min(optionIndex, options.length - 1)] ?? '');
-  }
-
-  onTaskTimeWheelKeydown(event: KeyboardEvent, unit: TaskTimeUnit): void {
-    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
-      return;
-    }
-
-    event.preventDefault();
-    const options = this.taskTimeWheelOptions(unit);
-    const selected = this.taskTimeValue(unit);
-    const currentIndex = Math.max(options.indexOf(selected), 0);
-    const increment = event.key === 'ArrowRight' ? 1 : -1;
-    const nextIndex = Math.max(0, Math.min(options.length - 1, currentIndex + increment));
-    this.setTaskTimeOption(unit, options[nextIndex]);
-    (event.currentTarget as HTMLElement).scrollTo({
-      left: nextIndex * TASK_TIME_WHEEL_ITEM_WIDTH,
-      behavior: 'smooth',
-    });
-  }
-
-  selectTaskTimeOption(event: MouseEvent, unit: TaskTimeUnit, value: string): void {
-    this.setTaskTimeOption(unit, value);
-    const wheel = (event.currentTarget as HTMLElement).closest('.task-time-wheel');
-    const index = this.taskTimeWheelOptions(unit).indexOf(value);
-    wheel?.scrollTo({ left: index * TASK_TIME_WHEEL_ITEM_WIDTH, behavior: 'smooth' });
-  }
-
   setReminder(settings: ReminderSettings): void {
     this.taskDraft.reminderTime = settings.time;
     this.taskDraft.sendNotification = settings.sendNotification;
+  }
+
+  chooseQuickTask(title: string): void {
+    this.taskDraft.title = title;
+  }
+
+  updateTaskTime(event: Event): void {
+    const value = (event.currentTarget as HTMLInputElement).value;
+    this.taskTimeInput = value;
+    this.taskDraft.time = this.parseTaskTime(value) ?? '';
   }
 
   colorValue(color: TaskColor): string {
@@ -100,7 +50,7 @@ export class TaskFormComponent implements OnChanges {
 
   submit(): void {
     const title = this.taskDraft.title.trim();
-    if (!title) {
+    if (!title || !this.isTaskTimeValid) {
       return;
     }
 
@@ -130,54 +80,24 @@ export class TaskFormComponent implements OnChanges {
           color: task.color,
         }
       : this.emptyTask();
-
-    this.newTaskHourDraft = '';
-    this.newTaskMinuteDraft = '';
-    this.newTaskPeriodDraft = '';
-
-    if (task?.time && this.isValidTime(task.time)) {
-      const [hourText, minute] = task.time.split(':');
-      const hour24 = Number(hourText);
-      this.newTaskHourDraft = String(hour24 % 12 || 12).padStart(2, '0');
-      this.newTaskMinuteDraft = minute;
-      this.newTaskPeriodDraft = hour24 >= 12 ? 'PM' : 'AM';
-    }
+    this.taskTimeInput = task?.time ? this.formatTaskTime(task.time) : '';
   }
 
-  private setTaskTimeOption(unit: TaskTimeUnit, value: string): void {
-    if (unit === 'hour') {
-      this.newTaskHourDraft = value;
-    } else if (unit === 'minute') {
-      this.newTaskMinuteDraft = value;
-    } else {
-      this.newTaskPeriodDraft = value === 'AM' || value === 'PM' ? value : '';
+  private parseTaskTime(value: string): string | null {
+    const match = /^(0?[1-9]|1[0-2]):([0-5]\d)\s?(AM|PM)$/i.exec(value.trim());
+    if (!match) {
+      return null;
     }
 
-    this.updateNewTaskTime();
+    const hour12 = Number(match[1]) % 12;
+    const hour24 = hour12 + (match[3].toUpperCase() === 'PM' ? 12 : 0);
+    return `${String(hour24).padStart(2, '0')}:${match[2]}`;
   }
 
-  private taskTimeValue(unit: TaskTimeUnit): string {
-    if (unit === 'hour') {
-      return this.newTaskHourDraft;
-    }
-    if (unit === 'minute') {
-      return this.newTaskMinuteDraft;
-    }
-    return this.newTaskPeriodDraft;
-  }
-
-  private updateNewTaskTime(): void {
-    if (!this.newTaskHourDraft || !this.newTaskMinuteDraft || !this.newTaskPeriodDraft) {
-      this.taskDraft.time = '';
-      return;
-    }
-
-    const hour12 = Number(this.newTaskHourDraft) % 12;
-    const hour24 = hour12 + (this.newTaskPeriodDraft === 'PM' ? 12 : 0);
-    this.taskDraft.time = `${String(hour24).padStart(2, '0')}:${this.newTaskMinuteDraft}`;
-  }
-
-  private isValidTime(value: string): boolean {
-    return /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+  private formatTaskTime(value: string): string {
+    const [hourText, minute] = value.split(':');
+    const hour24 = Number(hourText);
+    const hour12 = hour24 % 12 || 12;
+    return `${String(hour12).padStart(2, '0')}:${minute} ${hour24 >= 12 ? 'PM' : 'AM'}`;
   }
 }

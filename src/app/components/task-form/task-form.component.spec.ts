@@ -49,7 +49,27 @@ describe('TaskFormComponent', () => {
     ]);
   });
 
-  it('should initialize task fields and time-wheel values when editing', () => {
+  it('should fill the task title from a quick choice without changing other fields', () => {
+    const fixture = TestBed.createComponent(TaskFormComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+    component.taskDraft.time = '20:35';
+    component.taskDraft.repeat = 'weekly';
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    const quickTaskButton = Array.from(
+      root.querySelectorAll<HTMLButtonElement>('.quick-task-button'),
+    ).find((button) => button.textContent?.trim() === 'Gym');
+    expect(quickTaskButton).toBeTruthy();
+    quickTaskButton?.click();
+
+    expect(component.taskDraft.title).toBe('Gym');
+    expect(component.taskDraft.time).toBe('20:35');
+    expect(component.taskDraft.repeat).toBe('weekly');
+  });
+
+  it('should initialize the text time input from a saved 24-hour time', async () => {
     const fixture = TestBed.createComponent(TaskFormComponent);
     fixture.componentRef.setInput('task', makeTask());
     fixture.detectChanges();
@@ -62,33 +82,72 @@ describe('TaskFormComponent', () => {
       sendNotification: true,
       repeat: 'daily',
     });
-    expect(component.newTaskHourDraft).toBe('08');
-    expect(component.newTaskMinuteDraft).toBe('35');
-    expect(component.newTaskPeriodDraft).toBe('PM');
+    const root = fixture.nativeElement as HTMLElement;
+    const timeInput = root.querySelector<HTMLInputElement>('input[name="taskTime"]');
+    expect(timeInput?.type).toBe('text');
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(timeInput?.value).toBe('08:35 PM');
   });
 
-  it('should update the task time from wheel scrolling and emit cancel', () => {
+  it('should convert a 12-hour text entry to the stored 24-hour time', async () => {
     const fixture = TestBed.createComponent(TaskFormComponent);
     fixture.detectChanges();
     const component = fixture.componentInstance;
     const root = fixture.nativeElement as HTMLElement;
-    const hourWheel = root.querySelector<HTMLElement>('[aria-label="Task hour"]');
-    const minuteWheel = root.querySelector<HTMLElement>('[aria-label="Task minute"]');
-    const periodWheel = root.querySelector<HTMLElement>('[aria-label="AM or PM"]');
+    const timeInput = root.querySelector<HTMLInputElement>('input[name="taskTime"]');
+    expect(timeInput?.type).toBe('text');
 
-    const canceled: boolean[] = [];
-    component.cancel.subscribe(() => canceled.push(true));
-    if (hourWheel && minuteWheel && periodWheel) {
-      hourWheel.scrollLeft = 8 * 40;
-      hourWheel.dispatchEvent(new Event('scroll'));
-      minuteWheel.scrollLeft = 36 * 40;
-      minuteWheel.dispatchEvent(new Event('scroll'));
-      periodWheel.scrollLeft = 2 * 40;
-      periodWheel.dispatchEvent(new Event('scroll'));
+    component.taskDraft.title = 'Morning walk';
+    if (timeInput) {
+      timeInput.value = '09:10 PM';
+      timeInput.dispatchEvent(new Event('input', { bubbles: true }));
     }
-    expect(component.taskDraft.time).toBe('20:35');
+    await fixture.whenStable();
+    expect(component.taskDraft.time).toBe('21:10');
 
-    component.cancel.emit();
-    expect(canceled).toEqual([true]);
+    const savedTasks: unknown[] = [];
+    component.save.subscribe((task) => savedTasks.push(task));
+    component.submit();
+    expect(savedTasks).toEqual([
+      {
+        title: 'Morning walk',
+        time: '21:10',
+        reminderTime: '',
+        sendNotification: false,
+        repeat: 'none',
+        color: 'sage',
+      },
+    ]);
+  });
+
+  it('should reject invalid time text and allow an empty optional time', () => {
+    const fixture = TestBed.createComponent(TaskFormComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+
+    const timeInput = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
+      'input[name="taskTime"]',
+    );
+    if (!timeInput) {
+      throw new Error('Task time input was not rendered.');
+    }
+
+    timeInput.value = '13:70 PM';
+    timeInput.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(component.isTaskTimeValid).toBe(false);
+    expect(component.taskDraft.time).toBe('');
+    component.taskDraft.title = 'Morning walk';
+    const savedTasks: unknown[] = [];
+    component.save.subscribe((task) => savedTasks.push(task));
+    component.submit();
+    expect(savedTasks).toHaveLength(0);
+
+    timeInput.value = '';
+    timeInput.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(component.isTaskTimeValid).toBe(true);
+    component.submit();
+    expect(savedTasks).toHaveLength(1);
+    expect(savedTasks[0]).toMatchObject({ time: '' });
   });
 });
